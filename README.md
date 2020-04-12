@@ -7,3 +7,5 @@ only tested on node 10.x running on ubuntu 18.04 and postgresql 10.x
 
 a fulcrum app that users can configure app names and app ids in(really just need the app id but that's hard for a person to understand when configuring in Fulcrum front end).
 
+the example fulcrum app json def can be imported into your account if you want to use it.
+
