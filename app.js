@@ -43,6 +43,6 @@ const getForms = function () {
             }
         })
         .catch(() => {
-            log('something went wrong in getRecords()');
+            log('something went wrong in getForms()');
         });
 }
