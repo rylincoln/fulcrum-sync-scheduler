@@ -1,0 +1,115 @@
+{
+  "form": {
+    "name": "Fulcrum Desktop Sync Config",
+    "description": "records defined in this app will be synced to our fulcrum desktop setup for GIS purposes.",
+    "record_title_key": "d633",
+    "title_field_keys": [
+      "d633"
+    ],
+    "status_field": {
+      "type": "StatusField",
+      "label": "Status",
+      "key": "@status",
+      "data_name": "status",
+      "default_value": "enabled",
+      "enabled": true,
+      "read_only": false,
+      "hidden": false,
+      "description": "",
+      "choices": [
+        {
+          "label": "Enabled",
+          "value": "enabled",
+          "color": "#87D30F"
+        },
+        {
+          "label": "Disabled",
+          "value": "disabled",
+          "color": "#CB0D0C"
+        }
+      ],
+      "required": false,
+      "disabled": false,
+      "default_previous_value": false
+    },
+    "auto_assign": false,
+    "hidden_on_dashboard": false,
+    "geometry_types": [
+
+    ],
+    "geometry_required": false,
+    "script": "var token = 'mysecretapitoken';\n\nvar app_names = [];\nvar apps = {}\n\nON(\"new-record\", function () {\n  queryFulcrum();\n})\n\nON(\"load-record\", function () {\n  queryFulcrum();\n})\n\nfunction queryFulcrum() {\n  var options = {\n    url: \"https://api.fulcrumapp.com/api/v2/query\",\n    method: \"POST\",\n    qs: {\n      q: \"SELECT name, form_id FROM tables WHERE type = 'form' ORDER BY name\",\n      format: 'json'\n    },\n    headers: {\n      'Content-Type': 'application/json',\n      \"X-ApiToken\": token\n    },\n  };\n\n  var result = REQUEST(options, function (error, response, body) {\n    if (error) {\n      ALERT('Error with request: ' + INSPECT(error));\n    } else {\n      apps = JSON.parse(body);\n      apps.rows.forEach(x => {\n        app_names.push(x.name)\n      })\n      SETCHOICES('select_the_app_to_sync', app_names)\n      SETREADONLY('select_the_app_to_sync', false)\n    }\n  });\n}\n\nON(\"change\", 'select_the_app_to_sync', function (event) {\n  let choice = CHOICEVALUE(event.value);\n  SETVALUE('app_name', choice)\n  apps.rows.forEach(row => {\n    if (row.name == choice) {\n      SETVALUE('form_id', row.form_id)\n    }\n  })\n})",
+    "elements": [
+      {
+        "type": "ChoiceField",
+        "key": "0797",
+        "label": "Select the App to Sync",
+        "description": null,
+        "required": false,
+        "disabled": true,
+        "hidden": false,
+        "data_name": "select_the_app_to_sync",
+        "default_value": null,
+        "visible_conditions_type": null,
+        "visible_conditions_behavior": "clear",
+        "visible_conditions": null,
+        "required_conditions_type": null,
+        "required_conditions": null,
+        "multiple": false,
+        "allow_other": false,
+        "choices": [
+          {
+            "label": "N/A",
+            "value": "N/A"
+          }
+        ],
+        "default_previous_value": false
+      },
+      {
+        "type": "TextField",
+        "key": "d633",
+        "label": "App Name",
+        "description": null,
+        "required": false,
+        "disabled": true,
+        "hidden": false,
+        "data_name": "app_name",
+        "default_value": null,
+        "visible_conditions_type": null,
+        "visible_conditions_behavior": "clear",
+        "visible_conditions": null,
+        "required_conditions_type": null,
+        "required_conditions": null,
+        "numeric": false,
+        "pattern": null,
+        "pattern_description": null,
+        "min_length": null,
+        "max_length": null,
+        "default_previous_value": false
+      },
+      {
+        "type": "TextField",
+        "key": "6e24",
+        "label": "Form ID",
+        "description": null,
+        "required": false,
+        "disabled": true,
+        "hidden": false,
+        "data_name": "form_id",
+        "default_value": null,
+        "visible_conditions_type": null,
+        "visible_conditions_behavior": "clear",
+        "visible_conditions": null,
+        "required_conditions_type": null,
+        "required_conditions": null,
+        "numeric": false,
+        "pattern": null,
+        "pattern_description": null,
+        "min_length": null,
+        "max_length": null,
+        "default_previous_value": false
+      }
+    ],
+    "image": null
+  }
+}
