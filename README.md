@@ -9,3 +9,7 @@ a fulcrum app that users can configure app names and app ids in(really just need
 
 the example fulcrum app json def can be imported into your account if you want to use it.
 
+This configuration allows your Fulcrum users to go add apps to be synced to your Fulcrum Desktop target DB.
+
+Useful for orgs that have a LOT of apps and don't want to sync everything everytime.
+
