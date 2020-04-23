@@ -15,5 +15,5 @@ Useful for orgs that have a LOT of apps and don't want to sync everything everyt
 
 ## python file
 the python file doesn't use fulcrum desktop at all - it's barely tested, but functional.
-it currently only syncs the parent level of a form, adds and objectid field, and creates a spatial view
+it currently only syncs the parent level of a form, adds an objectid field, and creates a spatial view if one doesn't already exist. these things seem to make arcXXX happy enough to use and publish as services.
 
