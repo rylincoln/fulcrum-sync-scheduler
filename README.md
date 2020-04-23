@@ -13,3 +13,7 @@ This configuration allows your Fulcrum users to go add apps to be synced to your
 
 Useful for orgs that have a LOT of apps and don't want to sync everything everytime.
 
+## python file
+the python file doesn't use fulcrum desktop at all - it's barely tested, but functional.
+it currently only syncs the parent level of a form, adds and objectid field, and creates a spatial view
+
