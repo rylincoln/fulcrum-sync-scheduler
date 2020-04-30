@@ -5,7 +5,7 @@
 # finally it will create a spatial view using postgis functions that can be added to arcmap and registered with the geodatabse
 # registering with the geodatabase is not included in this script - because of dependency on arcpy/licensing
 from fulcrum import Fulcrum
-from sqlalchemy import create_engine, Column, Integer, String, inspect, Numeric, Time, Date, Sequence
+from sqlalchemy import create_engine, Column, Integer, String, inspect, Numeric, Time, Date, Sequence, ARRAY, DateTime
 from sqlalchemy.sql import text
 from sqlalchemy.ext.declarative import declarative_base
 import pandas as pd
@@ -23,11 +23,11 @@ token = os.getenv('TOKEN')
 fulcrum = Fulcrum(key=token)
 
 # production postgresql db
-engine = create_engine(os.getenv('DBSTRING'), echo=False)
+engine = create_engine(os.getenv('DBSTRING'), echo=False, pool_size=10, max_overflow=20)
 
-# get all the forms from the config app - each record in this config app defines which other form in the org to sync
-forms = fulcrum.query('SELECT form_id,app_name FROM "form-id" WHERE _status = \'enabled\'')
-
+# get all the forms from the config app
+forms = fulcrum.query('SELECT form_id,app_name, create_spatial_view FROM "08134861-d511-42ad-949d-ec4db2897434" WHERE _status = \'enabled\'')
+# get all the form ids
 form_ids = forms['rows']
 
 # add an objectid if one doesn't exist (to make arcXXX happy) and create a spatial view of the table if one doesn't exist
@@ -50,7 +50,7 @@ def addObjectIDandCreateView(tablename):
 
             # if no view exists, make one, with a shape column how arc likes it (i think)
             if exists == False:
-
+                
                 viewStatement = text(f"""CREATE OR REPLACE VIEW {tablename}_view AS (
                     SELECT
                     st_setsrid(st_point(_longitude, _latitude), 4326)::geometry(Point,4326) AS shape,
@@ -73,7 +73,8 @@ def createFlatTable(queryDF, tablename):
                 table_name=tablename,
                 if_row_exists='update',
                 add_new_columns=True,
-                schema='arcgisuser')
+                schema='arcgisuser',
+                )
         print('Seems like it works!')
         print('checking/adding oid field')
 
@@ -81,7 +82,6 @@ def createFlatTable(queryDF, tablename):
 
     except Exception as error:
         print("wahwah" + str(error))
-        # queryDF.to_sql(tablename, engine, if_exists='replace', index=False) 
         pass
 
 # loop through the form IDs and call fulcrum for each - currently just a SELECT * FROM parentlevel.
@@ -93,16 +93,33 @@ def callFulcrum(form_ids):
         # loop over the form ids
         for obj in form_ids:
             tableName = obj['app_name']
-            tableNameClean = re.sub('[^a-zA-Z0-9 \n\.]', '_', tableName).lower().replace(' ','_')
+
+            # sanitize the table names
+            tableNameClean = re.sub(r'[^a-zA-Z0-9 \n\.]', '_', tableName).lower().replace(' ','_')
             tableNameCleaner = re.sub('_+', '_', tableNameClean)
+            # get the form data
             queries[tableNameCleaner] = 'SELECT * FROM "' + obj['form_id'] + '"'
         
         # call fulcrum and then send the result through the createTable and addObjectIDandCreateView functions
         for query in queries:
             data = fulcrum.query(queries[query], format='csv')
-            
-            # you have to set the index column to a unique field so the upsert works _record_id works perfectly
-            queryDF = pd.read_csv(io.StringIO(data.decode('utf-8')), index_col='_record_id')
+            # get the fields for this table
+            fields = fulcrum.query(queries[query], format='json')['fields']
+
+            # explicitly force soem dtypes in pandas - so this get's passed down to pangres -> postgresql
+            dtypes = {}
+            for field in fields:
+                # skip these fields as we'll let parse_dates pandas functions handle them
+                if field['name'] in ('_updated_at','_created_at','_server_updated_at','_server_created_at'):
+                    pass
+                elif field['type'] == 'integer':
+                    dtypes.update({ field['name'] : 'Int64'})
+                elif field['type'] == 'double':
+                    dtypes.update({ field['name'] : 'float64'})
+                else:
+                    dtypes.update({ field['name'] : 'string'})
+                                
+            queryDF = pd.read_csv(io.StringIO(data.decode('utf-8')), index_col='_record_id', dtype=dtypes, parse_dates=['_updated_at','_created_at','_server_updated_at','_server_created_at'])
             createFlatTable(queryDF, query)
     except Exception as error:
         print('uh-oh ' + str(error))
