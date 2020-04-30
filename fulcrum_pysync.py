@@ -26,7 +26,7 @@ fulcrum = Fulcrum(key=token)
 engine = create_engine(os.getenv('DBSTRING'), echo=False, pool_size=10, max_overflow=20)
 
 # get all the forms from the config app
-forms = fulcrum.query('SELECT form_id,app_name, create_spatial_view FROM "08134861-d511-42ad-949d-ec4db2897434" WHERE _status = \'enabled\'')
+forms = fulcrum.query('SELECT form_id,app_name, create_spatial_view FROM "form_uuid" WHERE _status = \'enabled\'')
 # get all the form ids
 form_ids = forms['rows']
 
